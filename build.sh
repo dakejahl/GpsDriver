@@ -1,9 +1,9 @@
 rm -rf build/
 
-pushd
+# pushd ${PWD}
 
 mkdir build && cd build
 cmake ..
 make
 
-popd
+# popd

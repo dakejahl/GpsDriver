@@ -1,5 +1,19 @@
 #include <GpsClass.hpp>
+#include <iostream>
 
+GpsClass::GpsClass(const std::string& path)
+{
+	serial::Timeout timeout(SERIAL_TIMEOUT);
+	_serial.setPort(path);
+	_serial.setBaudrate(9600);
+	_serial.open();
+	_serial.flush();
+}
+
+GpsClass::~GpsClass()
+{
+	_serial.close();
+}
 
 int GpsClass::callbackEntry(GPSCallbackType type, void* data1, int data2, void* user)
 {
@@ -8,22 +22,15 @@ int GpsClass::callbackEntry(GPSCallbackType type, void* data1, int data2, void* 
     return gps->callback(type, data1, data2);
 }
 
-ConnectionResult GpsClass::setup_serial_connection(const std::string& path, int baudrate)
-{
-    _serial = new SerialConnection(path, baudrate);
-
-    return _serial->start();
-}
-
 void GpsClass::run()
 {
 	GPSDriverUBX* gpsDriver = new GPSDriverUBX(GPSDriverUBX::Interface::UART, &callbackEntry, this, &_gps_report, &_satellite_report);
 
 	// gpsDriver->setSurveyInSpecs(SURVEYINACCMETERS * 10000.0f, MINIMUMOBSERVATIONTIME);
 
-	unsigned int auto_baudrate = 0;
+	unsigned int auto_baudrate = 9600;
 
-	if (!gpsDriver->configure(auto_baudrate, GPSDriverUBX::OutputMode::GPS) == 0) {
+	if (!(gpsDriver->configure(auto_baudrate, GPSDriverUBX::OutputMode::GPS) == 0)) {
 		std::cout << "GPS Configure Error" << std::endl;
 		return;
 	}
@@ -42,15 +49,21 @@ void GpsClass::run()
 			 // bit 0 set: got gps position update
 			if (ret & 1) {
 
-				std::cout << "GPS Position" << std::endl;
-				std::cout << "timestamp: " << _gps_report.timestamp << std::endl;
-				std::cout << "lat: " << _gps_report.lat << std::endl;
-				std::cout << "lon: " << _gps_report.lon << std::endl;
+				printf("GPS Position\n");
+				printf("timestamp: %llu\n", _gps_report.timestamp);
+				printf("lat: %d\n", _gps_report.lat);
+				printf("lon: %d\n", _gps_report.lon);
 			}
 
 			 // bit 1 set: got satellite info update
 			if (ret & 2) {
-				std::cout << "Publish Satellite Info" << std::endl;
+				printf("Publish Satellite Info\n");
+				printf("timestamp: %llu\n", _satellite_report.timestamp);
+
+
+				printf("count: %d\n", _satellite_report.count);
+
+
 			}
 
 		} else {
@@ -68,17 +81,24 @@ int GpsClass::callback(GPSCallbackType type, void* data1, int data2)
 {
 	switch (type) {
 	case GPSCallbackType::readDeviceData:
-		// TODO: do we need to check if there is data available?
-		return _serial->read_bytes(data1, data2);
-
-	case GPSCallbackType::writeDeviceData:
-		return _serial->write_bytes(data1, data2);
-
-	case GPSCallbackType::setBaudrate:
-		std::cout << "GPSCallbackType::setBaudrate :" << data2 << std::endl;
-		_serial->set_baudrate(data2);
+	{
+		if (_serial.waitReadable()) {
+			return _serial.read((uint8_t*) data1, data2);
+		}
 		return 0;
-
+	}
+	case GPSCallbackType::writeDeviceData:
+	{
+		size_t bytes_written = _serial.write((uint8_t*) data1, data2);
+		_serial.waitByteTimes(data2);
+		return bytes_written;
+	}
+	case GPSCallbackType::setBaudrate:
+	{
+		std::cout << "GPSCallbackType::setBaudrate :" << data2 << std::endl;
+		_serial.setBaudrate(data2);
+		return 0;
+	}
 	default:
 		std::cout << "Default case statement -- do nothing";
 	}

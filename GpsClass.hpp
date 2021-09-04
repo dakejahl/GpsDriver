@@ -1,17 +1,23 @@
 #pragma once
 
-#include <SerialConnection.hpp>
+// #include <SerialConnection.hpp>
 #include "PX4-GPSDrivers/src/ubx.h"
+
+#include <serial/serial.h>
+
 
 #include "definitions.h"
 
 #define GPS_RECEIVE_TIMEOUT 1200
+#define SERIAL_TIMEOUT 1000
 
 class GpsClass
 {
 public:
+	GpsClass(const std::string& path);
+	~GpsClass();
+
 	void run();
-	ConnectionResult setup_serial_connection(const std::string& path, int baudrate);
 
 	static int callbackEntry(GPSCallbackType type, void *data1, int data2, void *user);
 
@@ -21,5 +27,5 @@ private:
 	sensor_gps_s _gps_report = {};
 	satellite_info_s _satellite_report = {};
 
-	SerialConnection* _serial = nullptr;
+	serial::Serial _serial = {};
 };

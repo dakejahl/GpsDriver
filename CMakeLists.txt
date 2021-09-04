@@ -7,18 +7,18 @@ add_definitions("-std=c++11 -Wall -Wextra")
 # add_definitions(-DMAVLINK_USE_CONVENIENCE_FUNCTIONS -DMAVLINK_SEND_UART_BYTES)
 # add_definitions(-Wno-missing-field-initializers)
 
-include_directories(.)
+include_directories(. serial/include)
 
-# set(serial_SRCS serial/src/serial.cc serial/include/serial/serial.h serial/include/serial/v8stdint.h serial/src/impl/unix.cc)
+set(serial_SRCS serial/src/serial.cc serial/include/serial/serial.h serial/include/serial/v8stdint.h serial/src/impl/unix.cc)
 
-# add_library(serial ${serial_SRCS})
-# target_link_libraries(serial rt)
+add_library(serial ${serial_SRCS})
+target_link_libraries(serial rt)
 
 add_executable(gps
     # Application sources
     main.cpp
     GpsClass.cpp
-    SerialConnection.cpp
+    # SerialConnection.cpp
     # GPS Drivers source
     PX4-GPSDrivers/src/gps_helper.cpp
 	PX4-GPSDrivers/src/mtk.cpp
@@ -31,5 +31,5 @@ target_include_directories(gps PRIVATE
     PX4-GPSDrivers
 )
 
-# target_link_libraries(firefly_rtk
-#     serial)
+target_link_libraries(gps
+    serial)
