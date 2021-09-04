@@ -34,7 +34,6 @@ static inline gps_abstime gps_absolute_time() {
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now()).time_since_epoch()).count();
 }
 
-
 struct sensor_gps_s {
 	uint64_t timestamp;
 	uint64_t time_utc_usec;
@@ -49,6 +48,8 @@ struct sensor_gps_s {
 	float hdop;
 	float vdop;
 	int32_t noise_per_ms;
+	uint16_t automatic_gain_control;
+	uint8_t jamming_state;
 	int32_t jamming_indicator;
 	float vel_m_s;
 	float vel_n_m_s;

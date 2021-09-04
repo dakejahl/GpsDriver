@@ -29,8 +29,8 @@ void GpsClass::run()
 	// gpsDriver->setSurveyInSpecs(SURVEYINACCMETERS * 10000.0f, MINIMUMOBSERVATIONTIME);
 
 	unsigned int auto_baudrate = 9600;
-
-	if (!(gpsDriver->configure(auto_baudrate, GPSDriverUBX::OutputMode::GPS) == 0)) {
+	GPSHelper::GPSConfig config {GPSHelper::OutputMode::GPS, GPSHelper::GNSSSystemsMask::RECEIVER_DEFAULTS};
+	if (!(gpsDriver->configure(auto_baudrate, config) == 0)) {
 		std::cout << "GPS Configure Error" << std::endl;
 		return;
 	}
