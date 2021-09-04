@@ -1,5 +1,4 @@
 #include <GpsClass.hpp>
-#include <iostream>
 
 GpsClass::GpsClass(const std::string& path)
 {
@@ -17,62 +16,51 @@ GpsClass::~GpsClass()
 
 int GpsClass::callbackEntry(GPSCallbackType type, void* data1, int data2, void* user)
 {
-    auto gps = reinterpret_cast<GpsClass*>(user);
-
-    return gps->callback(type, data1, data2);
+	auto gps = reinterpret_cast<GpsClass*>(user);
+	return gps->callback(type, data1, data2);
 }
 
 void GpsClass::run()
 {
 	GPSDriverUBX* gpsDriver = new GPSDriverUBX(GPSDriverUBX::Interface::UART, &callbackEntry, this, &_gps_report, &_satellite_report);
-
-	// gpsDriver->setSurveyInSpecs(SURVEYINACCMETERS * 10000.0f, MINIMUMOBSERVATIONTIME);
-
-	unsigned int auto_baudrate = 9600;
-	GPSHelper::GPSConfig config {GPSHelper::OutputMode::GPS, GPSHelper::GNSSSystemsMask::RECEIVER_DEFAULTS};
-	if (!(gpsDriver->configure(auto_baudrate, config) == 0)) {
-		std::cout << "GPS Configure Error" << std::endl;
+	unsigned autobaud = 0; // Baud of zero means it will try all
+	GPSHelper::GPSConfig config = {GPSHelper::OutputMode::GPS, GPSHelper::GNSSSystemsMask::RECEIVER_DEFAULTS};
+	if (!(gpsDriver->configure(autobaud, config) == 0)) {
+		printf("GPS Configure Error\n");
 		return;
 	}
 
-	// In rare cases it can happen that we get an error from the driver (eg. checksum failure) due to
-	// bus errors or buggy firmware. In this case we want to try multiple times before giving up.
-	int numTries = 0;
-
-	while (numTries < 3) {
+	int retries = 0;
+	while (retries < 3) {
 
 		int ret = gpsDriver->receive(GPS_RECEIVE_TIMEOUT);
 
 		if (ret > 0) {
-			numTries = 0;
+			retries = 0;
 
-			 // bit 0 set: got gps position update
+			 // bit 0: gps position update
 			if (ret & 1) {
 
 				printf("GPS Position\n");
-				printf("timestamp: %llu\n", _gps_report.timestamp);
+				printf("timestamp: %zu\n", _gps_report.timestamp);
 				printf("lat: %d\n", _gps_report.lat);
 				printf("lon: %d\n", _gps_report.lon);
 			}
 
-			 // bit 1 set: got satellite info update
+			 // bit 1: satellite info update
 			if (ret & 2) {
 				printf("Publish Satellite Info\n");
-				printf("timestamp: %llu\n", _satellite_report.timestamp);
-
-
+				printf("timestamp: %zu\n", _satellite_report.timestamp);
 				printf("count: %d\n", _satellite_report.count);
-
-
 			}
 
 		} else {
-			std::cout << "error! ret : " << ret << std::endl;
-			++numTries;
+			printf("error! ret: %d\n", ret);
+			++retries;
 		}
 	}
 
-	std::cout << "GpsClass run() exiting" << std::endl;
+	printf("GpsClass run() exiting\n");
 
     return;
 }
@@ -95,34 +83,13 @@ int GpsClass::callback(GPSCallbackType type, void* data1, int data2)
 	}
 	case GPSCallbackType::setBaudrate:
 	{
-		std::cout << "GPSCallbackType::setBaudrate :" << data2 << std::endl;
+		printf("GPSCallbackType::setBaudrate: %d",data2);
 		_serial.setBaudrate(data2);
 		return 0;
 	}
 	default:
-		std::cout << "Default case statement -- do nothing";
+		printf("Default case statement\n");
 	}
-
-
-	// case GPSCallbackType::gotRTCMMessage:
-	// {
-	// 	std::cout << "GPSCallbackType::gotRTCMMessage" << std::endl;
-	// 	// gotRTCMData((uint8_t*) data1, data2);
-	// 	break;
-	// }
-
-	// case GPSCallbackType::surveyInStatus:
-	// {
-	// 	SurveyInStatus* status = (SurveyInStatus*)data1;
-	// 	std::cout << "surveyInStatus: Lat: " << status->latitude << " Lon: " << status->longitude << " Alt: " << status->altitude << "m Accur: " << status->mean_accuracy << "mm Duration: " << status->duration << std::endl;
-	// 	break;
-	// }
-
-	// case GPSCallbackType::setClock:
-	// 	// not used
-	// 	//std::cout << "GPSCallbackType::setClock" << std::endl;
-	// 	break;
-	// }
 
 	return 0;
 }

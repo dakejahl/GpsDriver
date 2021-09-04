@@ -1,11 +1,7 @@
 #pragma once
 
-// #include <SerialConnection.hpp>
 #include "PX4-GPSDrivers/src/ubx.h"
-
 #include <serial/serial.h>
-
-
 #include "definitions.h"
 
 #define GPS_RECEIVE_TIMEOUT 1200
