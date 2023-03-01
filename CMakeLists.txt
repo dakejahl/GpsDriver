@@ -4,7 +4,12 @@ project(gps_driver)
 
 add_definitions("-std=c++11 -Wall -Wextra")
 
-include_directories(. serial/include)
+include_directories(
+    .
+    src
+    serial/include
+    PX4-GPSDrivers/src/
+)
 
 set(SERIAL_SRCS
     serial/src/serial.cc
@@ -16,8 +21,8 @@ target_link_libraries(serial rt)
 
 add_executable(gps_driver
     # Application sources
-    main.cpp
-    GpsClass.cpp
+    src/main.cpp
+    src/GpsClass.cpp
     # GPS Drivers source
     PX4-GPSDrivers/src/gps_helper.cpp
 	PX4-GPSDrivers/src/mtk.cpp
