@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.12)
 
-project(gps_desktop)
+project(gps_driver)
 
 add_definitions("-std=c++11 -Wall -Wextra")
 
@@ -14,7 +14,7 @@ set(SERIAL_SRCS
 add_library(serial ${SERIAL_SRCS})
 target_link_libraries(serial rt)
 
-add_executable(gps
+add_executable(gps_driver
     # Application sources
     main.cpp
     GpsClass.cpp
@@ -26,9 +26,9 @@ add_executable(gps
 	PX4-GPSDrivers/src/ubx.cpp
 )
 
-target_include_directories(gps PRIVATE
+target_include_directories(gps_driver PRIVATE
     PX4-GPSDrivers
 )
 
-target_link_libraries(gps
+target_link_libraries(gps_driver
     serial)

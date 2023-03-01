@@ -15,10 +15,10 @@ public:
 
 	void run();
 
-	static int callbackEntry(GPSCallbackType type, void *data1, int data2, void *user);
+	static int callbackEntry(GPSCallbackType type, void* data1, int data2, void* user);
 
 private:
-	int callback(GPSCallbackType type, void *data1, int data2);
+	int callback(GPSCallbackType type, void* data1, int data2);
 
 	sensor_gps_s _gps_report = {};
 	satellite_info_s _satellite_report = {};

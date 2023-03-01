@@ -24,13 +24,17 @@ void GpsClass::run()
 {
 	GPSDriverUBX* gpsDriver = new GPSDriverUBX(GPSDriverUBX::Interface::UART, &callbackEntry, this, &_gps_report, &_satellite_report);
 	unsigned autobaud = 0; // Baud of zero means it will try all
-	GPSHelper::GPSConfig config = {GPSHelper::OutputMode::GPS, GPSHelper::GNSSSystemsMask::RECEIVER_DEFAULTS};
+	GPSHelper::GPSConfig config = {GPSHelper::OutputMode::GPS, GPSHelper::GNSSSystemsMask::RECEIVER_DEFAULTS,
+				       GPSHelper::InterfaceProtocolsMask::ALL_DISABLED
+				      };
+
 	if (!(gpsDriver->configure(autobaud, config) == 0)) {
 		printf("GPS Configure Error\n");
 		return;
 	}
 
 	int retries = 0;
+
 	while (retries < 3) {
 
 		int ret = gpsDriver->receive(GPS_RECEIVE_TIMEOUT);
@@ -38,7 +42,7 @@ void GpsClass::run()
 		if (ret > 0) {
 			retries = 0;
 
-			 // bit 0: gps position update
+			// bit 0: gps position update
 			if (ret & 1) {
 
 				printf("GPS Position\n");
@@ -47,7 +51,7 @@ void GpsClass::run()
 				printf("lon: %d\n", _gps_report.lon);
 			}
 
-			 // bit 1: satellite info update
+			// bit 1: satellite info update
 			if (ret & 2) {
 				printf("Publish Satellite Info\n");
 				printf("timestamp: %zu\n", _satellite_report.timestamp);
@@ -62,31 +66,32 @@ void GpsClass::run()
 
 	printf("GpsClass run() exiting\n");
 
-    return;
+	return;
 }
 
 int GpsClass::callback(GPSCallbackType type, void* data1, int data2)
 {
 	switch (type) {
-	case GPSCallbackType::readDeviceData:
-	{
+	case GPSCallbackType::readDeviceData: {
 		if (_serial.waitReadable()) {
 			return _serial.read((uint8_t*) data1, data2);
 		}
+
 		return 0;
 	}
-	case GPSCallbackType::writeDeviceData:
-	{
+
+	case GPSCallbackType::writeDeviceData: {
 		size_t bytes_written = _serial.write((uint8_t*) data1, data2);
 		_serial.waitByteTimes(data2);
 		return bytes_written;
 	}
-	case GPSCallbackType::setBaudrate:
-	{
-		printf("GPSCallbackType::setBaudrate: %d",data2);
+
+	case GPSCallbackType::setBaudrate: {
+		printf("GPSCallbackType::setBaudrate: %d", data2);
 		_serial.setBaudrate(data2);
 		return 0;
 	}
+
 	default:
 		printf("Default case statement\n");
 	}
