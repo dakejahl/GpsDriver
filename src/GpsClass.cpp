@@ -1,13 +1,9 @@
 #include <GpsClass.hpp>
 
-GpsClass::GpsClass(const std::string& path)
-{
-	serial::Timeout timeout(SERIAL_TIMEOUT);
-	_serial.setPort(path);
-	_serial.setBaudrate(9600);
-	_serial.open();
-	_serial.flush();
-}
+GpsClass::GpsClass(const std::string& path, const uint32_t baudrate)
+	: _baudrate(baudrate)
+	, _path(path)
+{}
 
 GpsClass::~GpsClass()
 {
@@ -20,10 +16,20 @@ int GpsClass::callbackEntry(GPSCallbackType type, void* data1, int data2, void* 
 	return gps->callback(type, data1, data2);
 }
 
+void GpsClass::initialize()
+{
+	_serial.setPort(_path);
+	_serial.setBaudrate(_baudrate);
+	_serial.open();
+	_serial.flush();
+}
+
 void GpsClass::run()
 {
 	GPSDriverUBX* gpsDriver = new GPSDriverUBX(GPSDriverUBX::Interface::UART, &callbackEntry, this, &_gps_report, &_satellite_report);
+
 	unsigned autobaud = 0; // Baud of zero means it will try all
+
 	GPSHelper::GPSConfig config = {GPSHelper::OutputMode::GPS, GPSHelper::GNSSSystemsMask::RECEIVER_DEFAULTS,
 				       GPSHelper::InterfaceProtocolsMask::ALL_DISABLED
 				      };
@@ -45,7 +51,7 @@ void GpsClass::run()
 			// bit 0: gps position update
 			if (ret & 1) {
 
-				printf("GPS Position\n");
+				printf("Position Update\n");
 				printf("timestamp: %zu\n", _gps_report.timestamp);
 				printf("lat: %d\n", _gps_report.lat);
 				printf("lon: %d\n", _gps_report.lon);
@@ -53,9 +59,9 @@ void GpsClass::run()
 
 			// bit 1: satellite info update
 			if (ret & 2) {
-				printf("Publish Satellite Info\n");
+				printf("Satellite Info\n");
 				printf("timestamp: %zu\n", _satellite_report.timestamp);
-				printf("count: %d\n", _satellite_report.count);
+				printf("sat count: %d\n", _satellite_report.count);
 			}
 
 		} else {
@@ -87,7 +93,7 @@ int GpsClass::callback(GPSCallbackType type, void* data1, int data2)
 	}
 
 	case GPSCallbackType::setBaudrate: {
-		printf("GPSCallbackType::setBaudrate: %d", data2);
+		printf("GPSCallbackType::setBaudrate: %d\n", data2);
 		_serial.setBaudrate(data2);
 		return 0;
 	}
